@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to HTML Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind CSS to include the typography plugin
+        tailwind.config = {
+            theme: {
+                extend: {},
+            },
+            plugins: [
+                require('@tailwindcss/typography'),
+            ],
+        };
+    </script>
+    <!-- Marked.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+    <div class="container mx-auto p-4 md:p-8 lg:p-12 flex-grow">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-blue-700 mb-2">Markdown Content Viewer</h1>
+            <p class="text-lg text-gray-600">Dynamically rendering <code class="bg-gray-200 px-1 rounded">input.md</code> to HTML.</p>
+        </header>
+
+        <main id="markdown-output" class="prose lg:prose-xl mx-auto bg-white shadow-lg rounded-lg p-6 md:p-8 w-full max-w-4xl">
+            <!-- Markdown content will be rendered here -->
+            <p class="text-center text-gray-500">Loading markdown content...</p>
+        </main>
+    </div>
+
+    <footer class="text-center mt-8 p-4 text-gray-500 text-sm">
+        &copy; 2023 Markdown Viewer. Powered by Marked.js and Tailwind CSS.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const markdownOutput = document.getElementById('markdown-output');
+
+            fetch('input.md')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(markdownContent => {
+                    // Configure marked to use GitHub Flavored Markdown (GFM)
+                    marked.setOptions({
+                        gfm: true, // Use GitHub Flavored Markdown
+                        breaks: true, // Convert line breaks to <br>
+                        // Sanitize the output HTML to prevent XSS attacks. Important for untrusted input.
+                        // For a simple local viewer, it might be optional, but good practice.
+                        // Marked.js's built-in sanitizer is basic; for robust sanitization, consider DOMPurify.
+                        sanitize: true,
+                        smartLists: true,
+                        smartypants: false,
+                        langPrefix: 'language-', // prefix for code blocks
+                        highlight: function (code, lang) {
+                            // This function is for syntax highlighting.
+                            // For a full-featured highlight, you'd integrate a library like Prism.js or highlight.js here.
+                            // For this example, we'll just return the raw code.
+                            // The `prose` class will provide basic styling for `<pre>` and `<code>`.
+                            return code;
+                        }
+                    });
+
+                    // Parse the markdown content
+                    const htmlContent = marked.parse(markdownContent);
+                    markdownOutput.innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    console.error('Error fetching or parsing markdown:', error);
+                    markdownOutput.innerHTML = `<div class="text-red-600 bg-red-100 p-4 rounded-md">\n                                                    <p class="font-bold">Error:</p>\n                                                    <p>Failed to load or parse markdown content from <code>input.md</code>.</p>\n                                                    <p>Please ensure <code>input.md</code> exists in the same directory and is accessible.</p>\n                                                    <p>Details: ${error.message}</p>\n                                                </div>`;
+                });
+        });
+    </script>
+</body>
+</html>
